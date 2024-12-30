@@ -1,0 +1,24 @@
+{
+  "name": "aretha",
+  "version": "0.0.1",
+  "description": "\"https://github.com/planet-nine-app/aretha\",",
+  "keywords": [
+    "tickets",
+    "allyabase",
+    "sessionless"
+  ],
+  "license": "GPL-3.0-or-later",
+  "author": "planetnineisaspaceship",
+  "type": "module",
+  "main": "aretha.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "bdo-js": "^0.0.4",
+    "express": "^4.21.2",
+    "fount-js": "^0.0.3",
+    "magic-gateway-js": "^0.0.2",
+    "sessionless-node": "^0.11.0"
+  }
+}
