@@ -128,12 +128,14 @@ console.warn(err);
   }
 });
 
-app.get('user/:uuid/tickets', async (req, res) => {
+app.put('user/:uuid/tickets/:flavor', async (req, res) => {
   try {
     const uuid = req.params.uuid;
-    const timestamp = req.query.timestamp;
-    const signature = req.query.signature;
-    const message = timestamp + uuid;
+    const flavor = req.params.flavor;
+    const quantity = req.body.quantity;
+    const timestamp = req.body.timestamp;
+    const signature = req.body.signature;
+    const message = timestamp + uuid + flavor + quantity;
 
     const foundUser = await db.getUserByUUID(req.params.uuid);
 
@@ -142,10 +144,33 @@ app.get('user/:uuid/tickets', async (req, res) => {
       return res.send({error: 'auth error'});
     }
 
-    // send something to fount
+    const payload = {
+      charge: flavor.substring(0, 2),
+      direction: flavor.substring(2, 4),
+      rarity: flavor.substring(4, 6),
+      size: flavor.substring(6, 8),
+      texture: flavor.substring(8, 10),
+      shape: flavor.substring(10, 12),
+      toUserUUID: fountUser.uuid,
+      quantity: quanity
+    };
 
-    // return the result
-    
+    const fountMessage = timestamp + fountUser.uuid + flavor + quantity;
+
+    sessionless.getKeys = db.getKeys;
+    payload.signature = await sessionless.sign(fountMessage);
+
+    const url = `${fount.baseURL}user/${foundUser.fountUser.uuid}/nineum`;
+
+    const resp = fetch(url, {
+      method: 'put',
+      body: JSON.stringify(payload),
+      headers: {'Content-Type': 'application/json'}
+    });
+
+    const nineumObject = await resp.json();
+
+    res.send(nineumObject);
   } catch(err) {
 console.warn(err);
     res.status(404);
