@@ -3,7 +3,7 @@ should();
 import sessionless from 'sessionless-node';
 import superAgent from 'superagent';
 
-const baseURL = 'http://127.0.0.1:7277/';
+const baseURL = process.env.DEV ? 'https://dev.aretha.allyabase.com/' : 'http://127.0.0.1:7277/';
 
 const get = async function(path) {
   console.info("Getting " + path);
@@ -47,7 +47,7 @@ it('should register a user', async () => {
 console.log(res.body);
   savedUser = res.body;
   res.body.uuid.length.should.equal(36);
-});
+}).timeout(60000);
 
 it('should get user with account id', async () => {
   const timestamp = new Date().getTime() + '';
@@ -55,7 +55,8 @@ it('should get user with account id', async () => {
   const signature = await sessionless.sign(timestamp + savedUser.uuid);
 
   const res = await get(`${baseURL}user/${savedUser.uuid}?timestamp=${timestamp}&signature=${signature}`);
-  res.body.addieUser.uuid.should.equal(savedUser.addieUser.uuid);
+console.log('get user with account', res.body);
+  res.body.uuid.should.equal(savedUser.uuid);
   savedUser = res.body;
 });
 

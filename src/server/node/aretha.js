@@ -78,7 +78,7 @@ app.put('/user/create', async (req, res) => {
     let newFountUser;
 
     try {
-      const check = await fetch(`${fount.baseURL}user/${pubKey}`);
+      const check = await fetch(`${fount.baseURL}user/${pubKey}?timestamp=${req.body.timestamp}&signature=${signature}`);
       const maybeUser = await check.json();
       if(maybeUser.uuid) {
         newFountUser = maybeUser;
