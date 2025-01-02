@@ -3,7 +3,7 @@ should();
 import sessionless from 'sessionless-node';
 import superAgent from 'superagent';
 
-const baseURL = 'http://127.0.0.1:7243/';
+const baseURL = 'http://127.0.0.1:7277/';
 
 const get = async function(path) {
   console.info("Getting " + path);
@@ -59,8 +59,13 @@ it('should get user with account id', async () => {
   savedUser = res.body;
 });
 
-it('should get a flavor for tickets', async () => {
+it('should grant admin nineum', async () => {
+  // So we need a galactic user, which makes me feel when testing
+  // we should go ahead and make a galactic user for everyone
+});
 
+it('should get a flavor for tickets', async () => {
+  
 });
 
 it('should see how many tickets of a flavor are remaining', async () => {

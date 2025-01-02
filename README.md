@@ -139,6 +139,33 @@ In this case that's allocating a group of tickets, and then purchasing tickets f
 
 </details>
 
+<details>
+ <summary><code>PUT</code> <code><b>/user/:uuid/grant</b></code> <code>Grants admin nineum to Aretha for your galaxy</code></summary>
+
+##### Parameters
+
+> | name         |  required     | data type               | description                                                           |
+> |--------------|-----------|-------------------------|-----------------------------------------------------------------------|
+> | timestamp    |  true     | string                  | in a production system timestamps prevent replay attacks  |
+> | uuid         |  true     | string                  | the uuid of the galactic nineum holder  |
+> | signature    |  true     | string (signature)      | the signature from sessionless for the message  |
+
+
+##### Responses
+
+> | http code     | content-type                      | response                                                            |
+> |---------------|-----------------------------------|---------------------------------------------------------------------|
+> | `200`         | `application/json`                | `{flavor: quantity}`   |
+> | `406`         | `application/json`                | `{"code":"406","message":"Not acceptable"}`                            |
+
+##### Example cURL
+
+> ```javascript
+>  curl -X PUT -H "Content-Type: application/json" https://<placeholderURL>/user/<uuid>/grant
+> ```
+
+</details>
+
 ### Purchasing and getting of the ticket
 
 You might notice from the APIs that there is no API for purchasing, and retrieving a digital thing. 

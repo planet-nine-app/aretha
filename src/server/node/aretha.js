@@ -204,5 +204,23 @@ console.warn(err);
   }
 });
 
+app.put('user/:uuid/grant', async (req, res) => {
+  try {
+    req.body.toUserUUID = fountUser.uuid;
+    const resp = fetch(`${fount.baseURL}user/${req.params.uuid}/nineum/admin`, {
+      method: 'put',
+      body: JSON.stringify(req.body),
+      headers: {'Content-Type': 'application/json'}
+    });
+
+    const updatedUser = await resp.json();
+    res.send(updatedUser);
+  } catch(err) {
+console.warn(err);
+    res.status(404);
+    res.send({error: 'not found'});
+  }
+});
+
 app.listen(process.env.PORT || 7277);
 console.log('I had a ticket to paradise, but I lost it');
