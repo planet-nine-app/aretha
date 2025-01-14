@@ -22,26 +22,29 @@ const repeat = (func) => {
   setTimeout(func, 2000);
 };
 
+let fountUser;
+
 const bootstrap = async () => {
   try {
-    const fountUser = await fount.createUser(db.saveKeys, db.getKeys);
+    fountUser = await fount.createUser(db.saveKeys, db.getKeys);
 console.log('f', fountUser);
     const bdoUUID = await bdo.createUser(bdoHash, {}, () => {}, db.getKeys);
 console.log('b', bdoUUID);
     const spellbooks = await bdo.getSpellbooks(bdoUUID, bdoHash);
-    const addie = {
-      uuid: 'addie',
+console.log('there are ' + spellbooks.length + ' spellbooks');
+    const aretha = {
+      uuid: 'aretha',
       fountUUID: fountUser.uuid,
       fountPubKey: fountUser.pubKey,
       bdoUUID,
       spellbooks
     };
 
-    if(!addie.fountUUID || !addie.bdoUUID || !spellbooks || spellbooks.length === 0) {
+    if(!aretha.fountUUID || !aretha.bdoUUID || !spellbooks || spellbooks.length === 0) {
       throw new Error('bootstrap failed');
     }
 
-    await db.saveUser(addie);
+    await db.saveUser(aretha);
   } catch(err) {
 console.warn(err);
     repeat(bootstrap);
@@ -128,7 +131,7 @@ console.warn(err);
   }
 });
 
-app.put('user/:uuid/tickets/:flavor', async (req, res) => {
+app.put('/user/:uuid/tickets/:flavor', async (req, res) => {
   try {
     const uuid = req.params.uuid;
     const flavor = req.params.flavor;
@@ -145,6 +148,7 @@ app.put('user/:uuid/tickets/:flavor', async (req, res) => {
     }
 
     const payload = {
+      timestamp,
       charge: flavor.substring(0, 2),
       direction: flavor.substring(2, 4),
       rarity: flavor.substring(4, 6),
@@ -152,17 +156,18 @@ app.put('user/:uuid/tickets/:flavor', async (req, res) => {
       texture: flavor.substring(8, 10),
       shape: flavor.substring(10, 12),
       toUserUUID: fountUser.uuid,
-      quantity: quanity
+      quantity: quantity
     };
 
-    const fountMessage = timestamp + fountUser.uuid + flavor + quantity;
+    const fountMessage = timestamp + fountUser.uuid + payload.toUserUUID + flavor + quantity;
+console.log('message', fountMessage);
 
     sessionless.getKeys = db.getKeys;
     payload.signature = await sessionless.sign(fountMessage);
 
-    const url = `${fount.baseURL}user/${foundUser.fountUser.uuid}/nineum`;
+    const url = `${fount.baseURL}user/${fountUser.uuid}/nineum`;
 
-    const resp = fetch(url, {
+    const resp = await fetch(url, {
       method: 'put',
       body: JSON.stringify(payload),
       headers: {'Content-Type': 'application/json'}
@@ -170,7 +175,11 @@ app.put('user/:uuid/tickets/:flavor', async (req, res) => {
 
     const nineumObject = await resp.json();
 
-    res.send(nineumObject);
+    if(nineumObject.uuid === fountUser.uuid) {
+      return res.send({success: true});
+    }
+
+    res.send({success: false});
   } catch(err) {
 console.warn(err);
     res.status(404);
@@ -178,7 +187,26 @@ console.warn(err);
   }
 });
 
-app.get('user/:uuid/tickets/:flavor/remaining', async (req, res) => {
+app.put('/user/:uuid/grant', async (req, res) => {
+  try {
+    req.body.toUserUUID = fountUser.uuid;
+    const resp = await fetch(`${fount.baseURL}user/${req.params.uuid}/nineum/admin`, {
+      method: 'put',
+      body: JSON.stringify(req.body),
+      headers: {'Content-Type': 'application/json'}
+    });
+
+    const updatedUser = await resp.json();
+console.log('response from fount admin', updatedUser);
+    res.send({success: true});
+  } catch(err) {
+console.warn(err);
+    res.status(404);
+    res.send({error: 'not found'});
+  }
+});
+
+app.get('/user/:uuid/tickets/:flavor/remaining', async (req, res) => {
   try {
     const uuid = req.params.uuid;
     const flavor = req.params.flavor;
@@ -193,7 +221,9 @@ app.get('user/:uuid/tickets/:flavor/remaining', async (req, res) => {
       return res.send({error: 'auth error'});
     }
 
-    // send something to fount
+    const updateTimestamp = new Date().getTime() + '';
+//    const updateSignature = 
+//    const resp = await fetch(`${fount.baseURL}user/${fountUser.uuid}
 
     // return the result
     
@@ -204,23 +234,26 @@ console.warn(err);
   }
 });
 
-app.put('user/:uuid/grant', async (req, res) => {
+app.put('/user/:uuid/galaxy', async (req, res) => {
   try {
-    req.body.toUserUUID = fountUser.uuid;
-    const resp = fetch(`${fount.baseURL}user/${req.params.uuid}/nineum/admin`, {
-      method: 'put',
+    const resp = await fetch(`${fount.baseURL}user/${req.params.uuid}/nineum/galactic`, {
+      method: 'put', 
       body: JSON.stringify(req.body),
       headers: {'Content-Type': 'application/json'}
     });
 
-    const updatedUser = await resp.json();
-    res.send(updatedUser);
+    const galactic = await resp.json();
+console.log('response from fount is: ', galactic);
+
+    res.send(galactic);
   } catch(err) {
 console.warn(err);
     res.status(404);
     res.send({error: 'not found'});
   }
 });
+
+
 
 app.listen(process.env.PORT || 7277);
 console.log('I had a ticket to paradise, but I lost it');

@@ -4,6 +4,7 @@ import sessionless from 'sessionless-node';
 import superAgent from 'superagent';
 
 const baseURL = process.env.DEV ? 'https://dev.aretha.allyabase.com/' : 'http://127.0.0.1:7277/';
+const fountURL = process.env.DEV ? 'https://dev.fount.allyabase.com/' : 'http://127.0.0.1:3006/';
 
 const get = async function(path) {
   console.info("Getting " + path);
@@ -12,6 +13,7 @@ const get = async function(path) {
 
 const put = async function(path, body) {
   console.info("Putting " + path);
+  console.info("and sending ", body);
   return await superAgent.put(path).send(body).set('Content-Type', 'application/json');
 };
 
@@ -27,6 +29,7 @@ const _delete = async function(path, body) {
 };
 
 let savedUser = {};
+let fountUser = {};
 let keys = {};
 let keysToReturn = {};
 
@@ -61,14 +64,62 @@ console.log('get user with account', res.body);
 });
 
 it('should grant admin nineum', async () => {
-  // So we need a galactic user, which makes me feel when testing
-  // we should go ahead and make a galactic user for everyone
+  const payload = {
+    timestamp: new Date().getTime() + '',
+    pubKey: keys.pubKey
+  };
+
+  payload.signature = await sessionless.sign(payload.timestamp + payload.pubKey);
+
+  const fountRes = await put(`${fountURL}user/create`, payload);  
+  const fountUser = fountRes.body;
+
+  const galacticPayload = {
+    timestamp: new Date().getTime() + '',
+    uuid: fountUser.uuid,
+    galaxy: '28880014'
+  };
+
+  const galacticMessage = galacticPayload.timestamp + fountUser.uuid;
+
+  galacticPayload.signature = await sessionless.sign(galacticMessage);  
+
+  const galacticRes = await put(`${fountURL}user/${fountUser.uuid}/nineum/galactic`, galacticPayload);
+
+  const galacticUser = galacticRes.body;
+
+  const adminPayload = {
+    timestamp: new Date().getTime() + '',
+    uuid: fountUser.uuid,
+  };
+
+  const message = adminPayload.timestamp + adminPayload.uuid;
+  adminPayload.signature = await sessionless.sign(message);
+
+  const adminRes = await put(`${baseURL}user/${fountUser.uuid}/grant`, adminPayload);
+
+  const successObj = adminRes.body;
+  successObj.success.should.equal(true);
 });
 
 it('should get a flavor for tickets', async () => {
-  
+  const payload = {
+    timestamp: new Date().getTime() + '',
+    quantity: 10
+  };
+
+  const flavor = '010203040506';
+
+  const message = payload.timestamp + savedUser.uuid + flavor + payload.quantity;
+  payload.signature = await sessionless.sign(message);
+
+  const res = await put(`${baseURL}user/${savedUser.uuid}/tickets/${flavor }`, payload);
+ 
+  const successObj = res.body;
+console.log('nineum?', res.body);
+  successObj.success.should.equal(true);;
 });
 
 it('should see how many tickets of a flavor are remaining', async () => {
-
+  // TODO
 });
