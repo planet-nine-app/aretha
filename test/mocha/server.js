@@ -3,8 +3,8 @@ should();
 import sessionless from 'sessionless-node';
 import superAgent from 'superagent';
 
-const baseURL = process.env.DEV ? 'https://dev.aretha.allyabase.com/' : 'http://127.0.0.1:7277/';
-const fountURL = process.env.DEV ? 'https://dev.fount.allyabase.com/' : 'http://127.0.0.1:3006/';
+const baseURL = process.env.SUB_DOMAIN ? `https://${process.env.SUB_DOMAIN}.aretha.allyabase.com/` : 'http://127.0.0.1:7277/';
+const fountURL = process.env.SUB_DOMAIN ? `https://${process.env.SUB_DOMAIN}.fount.allyabase.com/` : 'http://127.0.0.1:3006/';
 
 const get = async function(path) {
   console.info("Getting " + path);
