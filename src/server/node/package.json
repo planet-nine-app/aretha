@@ -15,10 +15,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "bdo-js": "^0.0.4",
+    "bdo-js": "latest",
     "express": "^4.21.2",
-    "fount-js": "^0.0.3",
-    "magic-gateway-js": "^0.0.2",
-    "sessionless-node": "^0.11.0"
+    "fount-js": "latest",
+    "magic-gateway-js": "latest",
+    "sessionless-node": "latest"
   }
 }
