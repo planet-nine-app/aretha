@@ -40,7 +40,7 @@ console.log('there are ' + spellbooks.length + ' spellbooks');
       spellbooks
     };
 
-    if(!aretha.fountUUID || !aretha.bdoUUID || !spellbooks || spellbooks.length === 0) {
+    if(!aretha.fountUUID || !aretha.bdoUUID || !spellbooks) {
       throw new Error('bootstrap failed');
     }
 
