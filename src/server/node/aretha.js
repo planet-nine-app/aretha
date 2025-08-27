@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { createHash } from 'node:crypto';
 import db from './src/persistence/db.js';
 import fount from 'fount-js';
@@ -9,6 +10,7 @@ import gateway from 'magic-gateway-js';
 const allowedTimeDifference = process.env.ALLOWED_TIME_DIFFERENCE || 300000; // keep this relaxed for now
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 const SUBDOMAIN = process.env.SUBDOMAIN || 'dev';
