@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "bdo-js": "latest",
+    "cors": "^2.8.5",
     "express": "^4.21.2",
     "fount-js": "latest",
     "magic-gateway-js": "latest",
