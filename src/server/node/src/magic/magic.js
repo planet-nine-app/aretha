@@ -9,8 +9,8 @@ fount.baseURL = process.env.LOCALHOST ? 'http://localhost:3006/' : `${SUBDOMAIN}
 
 let fountUser;
 
-// Helper to get fountain user (Aretha's service account)
-const getFountainUser = async () => {
+// Helper to get fount user (Aretha's service account)
+const getFountUser = async () => {
   if (!fountUser) {
     // Try to load from db
     try {
@@ -19,7 +19,7 @@ const getFountainUser = async () => {
         fountUser = { uuid: aretha.fountUUID, pubKey: aretha.fountPubKey };
       }
     } catch (err) {
-      console.warn('Could not load fountain user');
+      console.warn('Could not load fount user');
     }
   }
   return fountUser;
@@ -176,11 +176,11 @@ const MAGIC = {
         };
       }
 
-      const fountain = await getFountainUser();
-      if (!fountain) {
+      const fount = await getFountUser();
+      if (!fount) {
         return {
           success: false,
-          error: 'Fountain user not available'
+          error: 'Fount user not available'
         };
       }
 
@@ -194,15 +194,15 @@ const MAGIC = {
         size: flavor.substring(6, 8),
         texture: flavor.substring(8, 10),
         shape: flavor.substring(10, 12),
-        toUserUUID: fountain.uuid,
+        toUserUUID: fount.uuid,
         quantity: quantity
       };
 
-      const fountMessage = timestamp + fountain.uuid + payload.toUserUUID + flavor + quantity;
+      const fountMessage = timestamp + fount.uuid + payload.toUserUUID + flavor + quantity;
       sessionless.getKeys = db.getKeys;
       payload.signature = await sessionless.sign(fountMessage);
 
-      const url = `${fount.baseURL}user/${fountain.uuid}/nineum`;
+      const url = `${fount.baseURL}user/${fount.uuid}/nineum`;
 
       const resp = await fetch(url, {
         method: 'put',
@@ -212,13 +212,98 @@ const MAGIC = {
 
       const nineumObject = await resp.json();
 
-      if (nineumObject.uuid === fountain.uuid) {
+      if (nineumObject.uuid === fount.uuid) {
         return { success: true };
       }
 
       return { success: false, error: 'Nineum purchase failed' };
     } catch (err) {
       console.error('arethaUserTickets error:', err);
+      return {
+        success: false,
+        error: err.message
+      };
+    }
+  },
+
+  arethaUserPurchase: async (spell) => {
+    try {
+      const { flavor, quantity } = spell.components;
+      const buyerUUID = spell.casterUUID;
+
+      if (!buyerUUID) {
+        return {
+          success: false,
+          error: 'Missing casterUUID (buyer UUID)'
+        };
+      }
+
+      if (!flavor) {
+        return {
+          success: false,
+          error: 'Missing required field: flavor'
+        };
+      }
+
+      // Validate flavor format (12 hex characters)
+      if (!/^[0-9a-f]{12}$/i.test(flavor)) {
+        return {
+          success: false,
+          error: 'Invalid flavor format (must be 12 hex characters)'
+        };
+      }
+
+      const transferQuantity = quantity || 1;
+
+      const fount = await getFountUser();
+      if (!fount) {
+        return {
+          success: false,
+          error: 'Fount user not available'
+        };
+      }
+
+      const timestamp = Date.now().toString();
+
+      // Transfer nineum from Aretha's account to buyer
+      const payload = {
+        timestamp,
+        destinationUUID: buyerUUID,
+        charge: flavor.substring(0, 2),
+        direction: flavor.substring(2, 4),
+        rarity: flavor.substring(4, 6),
+        size: flavor.substring(6, 8),
+        texture: flavor.substring(8, 10),
+        shape: flavor.substring(10, 12),
+        quantity: transferQuantity
+      };
+
+      // Sign message: timestamp + fromUUID + destinationUUID + flavor + quantity
+      const message = timestamp + fount.uuid + buyerUUID + flavor + transferQuantity;
+      sessionless.getKeys = db.getKeys;
+      payload.signature = await sessionless.sign(message);
+
+      const url = `${fount.baseURL}user/${fount.uuid}/transfer`;
+
+      const resp = await fetch(url, {
+        method: 'post',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const transferResult = await resp.json();
+      console.log('Response from fount transfer:', transferResult);
+
+      if (transferResult.success || transferResult.uuid === buyerUUID) {
+        return {
+          success: true,
+          transfer: transferResult
+        };
+      }
+
+      return { success: false, error: 'Nineum transfer failed' };
+    } catch (err) {
+      console.error('arethaUserPurchase error:', err);
       return {
         success: false,
         error: err.message
@@ -237,19 +322,10 @@ const MAGIC = {
         };
       }
 
-      const fountain = await getFountainUser();
-      if (!fountain) {
-        return {
-          success: false,
-          error: 'Fountain user not available'
-        };
-      }
-
       const timestamp = Date.now().toString();
 
       const payload = {
         timestamp,
-        toUserUUID: fountain.uuid,
         uuid
       };
 
