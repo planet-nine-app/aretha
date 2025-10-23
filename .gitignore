@@ -133,3 +133,4 @@ config
 data
 artifacts
 images
+package-lock.json

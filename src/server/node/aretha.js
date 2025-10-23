@@ -6,6 +6,7 @@ import fount from 'fount-js';
 import bdo from 'bdo-js';
 import sessionless from 'sessionless-node';
 import gateway from 'magic-gateway-js';
+import MAGIC from './src/magic/magic.js';
 
 const allowedTimeDifference = process.env.ALLOWED_TIME_DIFFERENCE || 300000; // keep this relaxed for now
 
@@ -239,7 +240,7 @@ console.warn(err);
 app.put('/user/:uuid/galaxy', async (req, res) => {
   try {
     const resp = await fetch(`${fount.baseURL}user/${req.params.uuid}/nineum/galactic`, {
-      method: 'put', 
+      method: 'put',
       body: JSON.stringify(req.body),
       headers: {'Content-Type': 'application/json'}
     });
@@ -252,6 +253,26 @@ console.log('response from fount is: ', galactic);
 console.warn(err);
     res.status(404);
     res.send({error: 'not found'});
+  }
+});
+
+app.post('/magic/spell/:spellName', async (req, res) => {
+  try {
+    const spellName = req.params.spellName;
+    console.log(`🪄 Received ${spellName} spell`);
+
+    if (!MAGIC[spellName]) {
+      res.status(404);
+      return res.send({ error: 'spell not found' });
+    }
+
+    const result = await MAGIC[spellName](req.body);
+    res.status(result.success ? 200 : 900);
+    res.send(result);
+  } catch (err) {
+    console.error('Magic spell error:', err);
+    res.status(404);
+    res.send({ success: false, error: err.message });
   }
 });
 
