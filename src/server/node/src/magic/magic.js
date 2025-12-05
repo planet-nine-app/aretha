@@ -211,12 +211,21 @@ const MAGIC = {
       });
 
       const nineumObject = await resp.json();
+      console.log('🎟️ Fount nineum response:', JSON.stringify(nineumObject, null, 2));
+      console.log('🎟️ Expected UUID:', fountUser.uuid);
+      console.log('🎟️ Received UUID:', nineumObject.uuid);
 
       if (nineumObject.uuid === fountUser.uuid) {
         return { success: true };
       }
 
-      return { success: false, error: 'Nineum purchase failed' };
+      // Check if it was actually successful despite UUID mismatch
+      if (nineumObject.success) {
+        console.log('✅ Nineum allocation succeeded (success flag)');
+        return { success: true, data: nineumObject };
+      }
+
+      return { success: false, error: 'Nineum purchase failed', response: nineumObject };
     } catch (err) {
       console.error('arethaUserTickets error:', err);
       return {
