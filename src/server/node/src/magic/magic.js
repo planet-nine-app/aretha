@@ -176,8 +176,8 @@ const MAGIC = {
         };
       }
 
-      const fount = await getFountUser();
-      if (!fount) {
+      const fountUser = await getFountUser();
+      if (!fountUser) {
         return {
           success: false,
           error: 'Fount user not available'
@@ -194,15 +194,15 @@ const MAGIC = {
         size: flavor.substring(6, 8),
         texture: flavor.substring(8, 10),
         shape: flavor.substring(10, 12),
-        toUserUUID: fount.uuid,
+        toUserUUID: fountUser.uuid,
         quantity: quantity
       };
 
-      const fountMessage = timestamp + fount.uuid + payload.toUserUUID + flavor + quantity;
+      const fountMessage = timestamp + fountUser.uuid + payload.toUserUUID + flavor + quantity;
       sessionless.getKeys = db.getKeys;
       payload.signature = await sessionless.sign(fountMessage);
 
-      const url = `${fount.baseURL}user/${fount.uuid}/nineum`;
+      const url = `${fount.baseURL}user/${fountUser.uuid}/nineum`;
 
       const resp = await fetch(url, {
         method: 'put',
@@ -212,7 +212,7 @@ const MAGIC = {
 
       const nineumObject = await resp.json();
 
-      if (nineumObject.uuid === fount.uuid) {
+      if (nineumObject.uuid === fountUser.uuid) {
         return { success: true };
       }
 
