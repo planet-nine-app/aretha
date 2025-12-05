@@ -5,7 +5,7 @@ import fount from 'fount-js';
 sessionless.generateKeys(() => {}, db.getKeys);
 
 const SUBDOMAIN = process.env.SUBDOMAIN || 'dev';
-fount.baseURL = process.env.LOCALHOST ? 'http://localhost:3006/' : `${SUBDOMAIN}.fount.allyabase.com/`;
+fount.baseURL = process.env.LOCALHOST ? 'http://localhost:3006/' : `https://${SUBDOMAIN}.fount.allyabase.com/`;
 
 let fountUser;
 
