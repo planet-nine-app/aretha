@@ -276,10 +276,11 @@ const MAGIC = {
 
       const timestamp = Date.now().toString();
 
-      // Transfer nineum from Aretha's account to buyer
+      // Grant nineum from Aretha's account to buyer
       const payload = {
         timestamp,
-        destinationUUID: buyerUUID,
+        uuid: fountUser.uuid,           // Granter (Aretha)
+        toUserUUID: buyerUUID,          // Recipient (buyer)
         charge: flavor.substring(0, 2),
         direction: flavor.substring(2, 4),
         rarity: flavor.substring(4, 6),
@@ -289,30 +290,30 @@ const MAGIC = {
         quantity: transferQuantity
       };
 
-      // Sign message: timestamp + fromUUID + destinationUUID + flavor + quantity
+      // Sign message: timestamp + fromUUID + toUserUUID + flavor + quantity
       const message = timestamp + fountUser.uuid + buyerUUID + flavor + transferQuantity;
       sessionless.getKeys = db.getKeys;
       payload.signature = await sessionless.sign(message);
 
-      const url = `${fount.baseURL}user/${fountUser.uuid}/transfer`;
+      const url = `${fount.baseURL}user/${fountUser.uuid}/nineum`;
 
       const resp = await fetch(url, {
-        method: 'post',
+        method: 'put',
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' }
       });
 
-      const transferResult = await resp.json();
-      console.log('Response from fount transfer:', transferResult);
+      const grantResult = await resp.json();
+      console.log('Response from fount nineum grant:', grantResult);
 
-      if (transferResult.success || transferResult.uuid === buyerUUID) {
+      if (grantResult.success || grantResult.uuid === buyerUUID) {
         return {
           success: true,
-          transfer: transferResult
+          grant: grantResult
         };
       }
 
-      return { success: false, error: 'Nineum transfer failed' };
+      return { success: false, error: 'Nineum grant failed' };
     } catch (err) {
       console.error('arethaUserPurchase error:', err);
       return {
