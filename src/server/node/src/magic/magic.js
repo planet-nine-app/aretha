@@ -266,8 +266,8 @@ const MAGIC = {
 
       const transferQuantity = quantity || 1;
 
-      const fount = await getFountUser();
-      if (!fount) {
+      const fountUser = await getFountUser();
+      if (!fountUser) {
         return {
           success: false,
           error: 'Fount user not available'
@@ -290,11 +290,11 @@ const MAGIC = {
       };
 
       // Sign message: timestamp + fromUUID + destinationUUID + flavor + quantity
-      const message = timestamp + fount.uuid + buyerUUID + flavor + transferQuantity;
+      const message = timestamp + fountUser.uuid + buyerUUID + flavor + transferQuantity;
       sessionless.getKeys = db.getKeys;
       payload.signature = await sessionless.sign(message);
 
-      const url = `${fount.baseURL}user/${fount.uuid}/transfer`;
+      const url = `${fount.baseURL}user/${fountUser.uuid}/transfer`;
 
       const resp = await fetch(url, {
         method: 'post',
