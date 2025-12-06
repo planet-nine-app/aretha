@@ -15,8 +15,8 @@ app.use(cors());
 app.use(express.json());
 
 const SUBDOMAIN = process.env.SUBDOMAIN || 'dev';
-fount.baseURL = process.env.LOCALHOST ? 'http://localhost:3006/' : `${SUBDOMAIN}.fount.allyabase.com/`;
-bdo.baseURL = process.env.LOCALHOST ? 'http://localhost:3003/' : `${SUBDOMAIN}.bdo.allyabase.com/`;
+fount.baseURL = process.env.LOCALHOST ? 'http://localhost:3006/' : `https://${SUBDOMAIN}.fount.allyabase.com/`;
+bdo.baseURL = process.env.LOCALHOST ? 'http://localhost:3003/' : `https://${SUBDOMAIN}.bdo.allyabase.com/`;
 const bdoHashInput = `${SUBDOMAIN}aretha`;
 
 const bdoHash = createHash('sha256').update(bdoHashInput).digest('hex');
@@ -29,18 +29,80 @@ let fountUser;
 
 const bootstrap = async () => {
   try {
+    // Check if Aretha is already bootstrapped
+    let existingAretha;
+    try {
+      existingAretha = await db.getUserByUUID('aretha');
+      console.log('📦 Found existing Aretha user:', existingAretha);
+    } catch(err) {
+      console.log('🆕 No existing Aretha user found, creating new one');
+    }
+
+    // Create or get existing Fount user
     fountUser = await fount.createUser(db.saveKeys, db.getKeys);
 console.log('f', fountUser);
-    const bdoUUID = await bdo.createUser(bdoHash, {}, () => {}, db.getKeys);
+
+    const bdoUUID = existingAretha?.bdoUUID || await bdo.createUser(bdoHash, {}, () => {}, db.getKeys);
 console.log('b', bdoUUID);
-    const spellbooks = await bdo.getSpellbooks(bdoUUID, bdoHash);
+
+    const spellbooks = existingAretha?.spellbooks || await bdo.getSpellbooks(bdoUUID, bdoHash);
 console.log('there are ' + spellbooks.length + ' spellbooks');
+
+    // Check if galaxy already claimed
+    const arethaGalaxy = '41524554'; // "ARET" in hex (0x41524554)
+    let hasGalaxy = existingAretha?.galaxy === arethaGalaxy;
+
+    // If no galaxy yet, claim it
+    if (!hasGalaxy) {
+      console.log('🌌 Claiming Aretha galaxy...');
+      try {
+        const timestamp = Date.now().toString();
+
+        const payload = {
+          timestamp,
+          uuid: fountUser.uuid,
+          galaxy: arethaGalaxy
+        };
+
+        const message = timestamp + fountUser.uuid + arethaGalaxy;
+        sessionless.getKeys = db.getKeys;
+        payload.signature = await sessionless.sign(message);
+
+        const galaxyResp = await fetch(`${fount.baseURL}user/${fountUser.uuid}/nineum/galactic`, {
+          method: 'put',
+          body: JSON.stringify(payload),
+          headers: {'Content-Type': 'application/json'}
+        });
+
+        const galaxyResult = await galaxyResp.json();
+        console.log('🌌 Galaxy claim response:', galaxyResult);
+
+        // Verify we got galactic nineum
+        if (galaxyResult.nineum && galaxyResult.nineum.some(n => n.slice(14, 16) === 'ff')) {
+          console.log('✅ Aretha now has Galactic permissions in galaxy 41524554');
+          hasGalaxy = true;
+        } else if (galaxyResult.error && galaxyResult.error.includes('already claimed')) {
+          console.log('ℹ️  Galaxy already claimed (possibly by this user), continuing...');
+          hasGalaxy = true; // Mark as having galaxy even if already claimed
+        } else {
+          console.warn('⚠️  Galaxy claim returned unexpected response:', galaxyResult);
+          // Don't fail bootstrap - we'll retry on next restart
+        }
+      } catch(galaxyErr) {
+        console.error('❌ Failed to claim Aretha galaxy:', galaxyErr);
+        // Don't throw - allow bootstrap to continue and retry later
+      }
+    } else {
+      console.log('✅ Aretha already has galaxy 41524554');
+    }
+
     const aretha = {
       uuid: 'aretha',
       fountUUID: fountUser.uuid,
       fountPubKey: fountUser.pubKey,
       bdoUUID,
-      spellbooks
+      spellbooks,
+      galaxy: hasGalaxy ? arethaGalaxy : existingAretha?.galaxy // Store galaxy ID if claimed
     };
 
     if(!aretha.fountUUID || !aretha.bdoUUID || !spellbooks) {
@@ -48,6 +110,7 @@ console.log('there are ' + spellbooks.length + ' spellbooks');
     }
 
     await db.saveUser(aretha);
+    console.log('✅ Aretha bootstrap complete');
   } catch(err) {
 console.warn(err);
     repeat(bootstrap);

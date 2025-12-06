@@ -188,17 +188,19 @@ const MAGIC = {
 
       const payload = {
         timestamp,
+        uuid: fountUser.uuid,           // Granter (Aretha)
+        toUserUUID: fountUser.uuid,     // Recipient (Aretha - allocating to self)
         charge: flavor.substring(0, 2),
         direction: flavor.substring(2, 4),
         rarity: flavor.substring(4, 6),
         size: flavor.substring(6, 8),
         texture: flavor.substring(8, 10),
         shape: flavor.substring(10, 12),
-        toUserUUID: fountUser.uuid,
         quantity: quantity
       };
 
-      const fountMessage = timestamp + fountUser.uuid + payload.toUserUUID + flavor + quantity;
+      // Sign: timestamp + uuid + toUserUUID + flavor + quantity (matches Fount expectation)
+      const fountMessage = timestamp + payload.uuid + payload.toUserUUID + flavor + quantity;
       sessionless.getKeys = db.getKeys;
       payload.signature = await sessionless.sign(fountMessage);
 
