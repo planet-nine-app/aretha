@@ -255,5 +255,9 @@ console.warn(err);
   }
 });
 
-app.listen(process.env.PORT || 7277);
-console.log('I had a ticket to paradise, but I lost it');
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(process.env.PORT || 7277);
+  console.log('I had a ticket to paradise, but I lost it');
+}
+
+export default app;
